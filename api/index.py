@@ -115,86 +115,203 @@ def profile():
     
 
 # post routes
-
 # Get all posts in a forum
 @app.route('/posts', methods=['GET'])
 def get_posts():
     forum_id = request.args.get('forum_id')
-    posts = db.posts.find({"forum_id": ObjectId(forum_id)})
-    post_list = list(posts)
-    for post in post_list:
-        post['_id'] = str(post['_id'])
-        post['author_id'] = str(post['author_id'])
-        post['forum_id'] = str(post['forum_id'])
-    return jsonify(post_list)
+    if not forum_id:
+        return jsonify({"message": "forum_id is required"}), 400
+    
+    try:
+        posts = db.posts.find({"forum_id": ObjectId(forum_id)})
+        post_list = list(posts)
+        for post in post_list:
+            post['_id'] = str(post['_id'])
+            post['author_id'] = str(post['author_id'])
+            post['forum_id'] = str(post['forum_id'])
+        return jsonify(post_list)
+    except Exception as e:
+        return jsonify({"message": str(e)}), 400
 
 # Create a new post
 @app.route('/posts/create', methods=['POST'])
 @jwt_required()
 def create_post():
-    current_user = get_jwt_identity()
-    user = db.users.find_one({"rollno": current_user})
-    if user:
-        new_post = {
-            "content": request.json['content'],
-            "post_date": datetime.datetime.now(),
-            "forum_id": ObjectId(request.json['forum_id']),
-            "author_id": user['_id'],
-        }
-        post_id = db.posts.insert_one(new_post).inserted_id
-        return jsonify({"message": "Post created successfully", "post_id": str(post_id)}), 201
-    else:
-        return jsonify({"message": "User not found"}), 404
+    try:
+        current_user = get_jwt_identity()
+        user = db.users.find_one({"rollno": current_user})
+        if user:
+            new_post = {
+                "content": request.json['content'],
+                "post_date": datetime.datetime.now(),
+                "forum_id": ObjectId(request.json['forum_id']),
+                "author_id": user['_id'],
+            }
+            post_id = db.posts.insert_one(new_post).inserted_id
+            return jsonify({"message": "Post created successfully", "post_id": str(post_id)}), 201
+        else:
+            return jsonify({"message": "User not found"}), 404
+    except Exception as e:
+        return jsonify({"message": str(e)}), 400
 
 # Get a specific post by ID
 @app.route('/posts/<post_id>', methods=['GET'])
 def get_post(post_id):
-    post = db.posts.find_one({"_id": ObjectId(post_id)})
-    if post:
-        post['_id'] = str(post['_id'])
-        post['author_id'] = str(post['author_id'])
-        post['forum_id'] = str(post['forum_id'])
-        return jsonify(post)
-    else:
-        return jsonify({"message": "Post not found"}), 404
+    try:
+        post = db.posts.find_one({"_id": ObjectId(post_id)})
+        if post:
+            post['_id'] = str(post['_id'])
+            post['author_id'] = str(post['author_id'])
+            post['forum_id'] = str(post['forum_id'])
+            return jsonify(post)
+        else:
+            return jsonify({"message": "Post not found"}), 404
+    except Exception as e:
+        return jsonify({"message": str(e)}), 400
     
 # Update a specific post by ID
 @app.route('/posts/<post_id>', methods=['PUT'])
 @jwt_required()
 def update_post(post_id):
-    current_user = get_jwt_identity()
-    user = db.users.find_one({"rollno": current_user})
-    if user:
-        post = db.posts.find_one({"_id": ObjectId(post_id)})
-        if post:
-            if post['author_id'] == user['_id']:
-                db.posts.update_one({"_id": ObjectId(post_id)}, 
-                                    {"$set": {"content": request.json['content']}}
-                                    )
-                return jsonify({"message": "Post updated successfully"}), 200
+    try:
+        current_user = get_jwt_identity()
+        user = db.users.find_one({"rollno": current_user})
+        if user:
+            post = db.posts.find_one({"_id": ObjectId(post_id)})
+            if post:
+                if post['author_id'] == user['_id']:
+                    db.posts.update_one({"_id": ObjectId(post_id)}, 
+                                        {"$set": {"content": request.json['content']}}
+                                        )
+                    return jsonify({"message": "Post updated successfully"}), 200
+                else:
+                    return jsonify({"message": "Unauthorized"}), 401
             else:
-                return jsonify({"message": "Unauthorized"}), 401
+                return jsonify({"message": "Post not found"}), 404
         else:
-            return jsonify({"message": "Post not found"}), 404
-    else:
-        return jsonify({"message": "User not found"}), 404
+            return jsonify({"message": "User not found"}), 404
+    except Exception as e:
+        return jsonify({"message": str(e)}), 400
     
 # Delete a specific post by ID
 @app.route('/posts/<post_id>', methods=['DELETE'])
 @jwt_required()
 def delete_post(post_id):
-    current_user = get_jwt_identity()
-    user = db.users.find_one({"rollno": current_user})
-    if user:
-        post = db.posts.find_one({"_id": ObjectId(post_id)})
-        if post:
-            if post['author_id'] == user['_id']:
-                db.posts.delete_one({"_id": ObjectId(post_id)})
-                return jsonify({"message": "Post deleted successfully"}), 200
+    try:
+        current_user = get_jwt_identity()
+        user = db.users.find_one({"rollno": current_user})
+        if user:
+            post = db.posts.find_one({"_id": ObjectId(post_id)})
+            if post:
+                if post['author_id'] == user['_id']:
+                    db.posts.delete_one({"_id": ObjectId(post_id)})
+                    return jsonify({"message": "Post deleted successfully"}), 200
+                else:
+                    return jsonify({"message": "Unauthorized"}), 401
             else:
-                return jsonify({"message": "Unauthorized"}), 401
+                return jsonify({"message": "Post not found"}), 404
         else:
-            return jsonify({"message": "Post not found"}), 404
-    else:
-        return jsonify({"message": "User not found"}), 404
+            return jsonify({"message": "User not found"}), 404
+    except Exception as e:
+        return jsonify({"message": str(e)}), 400
+
+
+
+# reply routes
+# Get all replies to a post
+@app.route('/replies', methods=['GET'])
+def get_replies():
+    post_id = request.args.get('post_id')
+    if not post_id:
+        return jsonify({"message": "post_id is required"}), 400
+    
+    try:
+        replies = db.replies.find({"post_id": ObjectId(post_id)})
+        reply_list = list(replies)
+        for reply in reply_list:
+            reply['_id'] = str(reply['_id'])
+            reply['author_id'] = str(reply['author_id'])
+            reply['post_id'] = str(reply['post_id'])
+        return jsonify(reply_list)
+    except Exception as e:
+        return jsonify({"message": str(e)}), 400
+
+# Create a new reply
+@app.route('/replies/create', methods=['POST'])
+@jwt_required()
+def create_reply():
+    try:
+        current_user = get_jwt_identity()
+        user = db.users.find_one({"rollno": current_user})
+        if user:
+            new_reply = {
+                "content": request.json['content'],
+                "reply_date": datetime.datetime.now(),
+                "post_id": ObjectId(request.json['post_id']),
+                "author_id": user['_id'],
+            }
+            reply_id = db.replies.insert_one(new_reply).inserted_id
+            return jsonify({"message": "Reply created successfully", "reply_id": str(reply_id)}), 201
+        else:
+            return jsonify({"message": "User not found"}), 404
+    except Exception as e:
+        return jsonify({"message": str(e)}), 400
+    
+# delete a specific reply by ID
+@app.route('/replies/<reply_id>', methods=['DELETE'])
+@jwt_required()
+def delete_reply(reply_id):
+    try:
+        current_user = get_jwt_identity()
+        user = db.users.find_one({"rollno": current_user})
+        if user:
+            reply = db.replies.find_one({"_id": ObjectId(reply_id)})
+            if reply:
+                if reply['author_id'] == user['_id']:
+                    db.replies.delete_one({"_id": ObjectId(reply_id)})
+                    return jsonify({"message": "Reply deleted successfully"}), 200
+                else:
+                    return jsonify({"message": "Unauthorized"}), 401
+            else:
+                return jsonify({"message": "Reply not found"}), 404
+        else:
+            return jsonify({"message": "User not found"}), 404
+    except Exception as e:
+        return jsonify({"message": str(e)}), 400
+
+
+
+# forum routes
+# Get all forums
+@app.route('/forums', methods=['GET'])
+def get_forums():
+    try:
+        forums = db.forums.find()
+        forum_list = list(forums)
+        for forum in forum_list:
+            forum['_id'] = str(forum['_id'])
+        return jsonify(forum_list)
+    except Exception as e:
+        return jsonify({"message": str(e)}), 400
+
+# Create a new forum
+@app.route('/forums/create', methods=['POST'])
+@jwt_required()
+def create_forum():
+    try:
+        current_user = get_jwt_identity()
+        user = db.users.find_one({"rollno": current_user})
+        if user:
+            new_forum = {
+                "title": request.json['title'],
+                "description": request.json['description'],
+                "created_date": datetime.datetime.now(),
+                "author_id": user['_id'],
+            }
+            forum_id = db.forums.insert_one(new_forum).inserted_id
+            return jsonify({"message": "Forum created successfully", "forum_id": str(forum_id)}), 201
+        else:
+            return jsonify({"message": "User not found"}), 404
+    except Exception as e:
+        return jsonify({"message": str(e)}), 400
     
