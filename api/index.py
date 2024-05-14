@@ -169,8 +169,11 @@ def register_event(event_id):
     event = db.events.find_one({"_id": ObjectId(event_id)})
     if event:
         if user_roll not in event['participants']:
-            db.events.update_one({"_id": ObjectId(event_id)}, {"$push": {"participants": user_roll}})
-            return jsonify({"message": "Registered successfully"}), 200
+            if user_roll.strip():
+                db.events.update_one({"_id": ObjectId(event_id)}, {"$push": {"participants": user_roll}})
+                return jsonify({"message": "Registered successfully"}), 200
+            else:
+                print("User roll number is empty. Not updating the database.")            
         else:
             return jsonify({"message": "Already registered"}), 400
     else:
