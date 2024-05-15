@@ -164,20 +164,29 @@ def event(event_id):
 @app.route('/register_event/<event_id>', methods=['POST'])
 @jwt_required()
 def register_event(event_id):
-    user_roll = get_jwt_identity()
-    user = db.users.find_one({"rollno": user_roll})
-    event = db.events.find_one({"_id": ObjectId(event_id)})
-    if event:
+    try:
+        user_roll = get_jwt_identity()
+        user = db.users.find_one({"rollno": user_roll})
+        event = db.events.find_one({"_id": ObjectId(event_id)})
+        
+        if not event:
+            return jsonify({"message": "Event not found"}), 404
+        
+        if 'participants' not in event:
+            event['participants'] = []
+        
         if user_roll not in event['participants']:
             if user_roll.strip():
                 db.events.update_one({"_id": ObjectId(event_id)}, {"$push": {"participants": user_roll}})
                 return jsonify({"message": "Registered successfully"}), 200
             else:
-                print("User roll number is empty. Not updating the database.")            
+                print("User roll number is empty. Not updating the database.")
+                return jsonify({"message": "Invalid user roll number"}), 400
         else:
             return jsonify({"message": "Already registered"}), 200
-    else:
-        return jsonify({"message": "Event not found"}), 404
+
+    except Exception as e:
+        return jsonify({"message": "An error occurred", "error": str(e)}), 500
     
 @app.route('/registered_events', methods=['GET'])
 @jwt_required()
