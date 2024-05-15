@@ -175,7 +175,7 @@ def register_event(event_id):
             else:
                 print("User roll number is empty. Not updating the database.")            
         else:
-            return jsonify({"message": "Already registered"}), 400
+            return jsonify({"message": "Already registered"}), 200
     else:
         return jsonify({"message": "Event not found"}), 404
     
