@@ -196,17 +196,16 @@ def registered_events():
 
 # post routes
 
-# Get all posts in a forum
+# Get all posts
 @app.route('/posts', methods=['GET'])
 def get_posts():
-    forum_id = request.args.get('forum_id')
-    posts = db.posts.find({"forum_id": ObjectId(forum_id)})
+    posts = db.posts.find()
     post_list = list(posts)
     for post in post_list:
         post['_id'] = str(post['_id'])
         post['author_id'] = str(post['author_id'])
-        post['forum_id'] = str(post['forum_id'])
     return jsonify(post_list)
+    
 
 # Create a new post
 @app.route('/posts/create', methods=['POST'])
