@@ -205,6 +205,7 @@ def get_posts():
         post['_id'] = str(post['_id'])
         post['author_id'] = str(post['author_id'])
         post['author_rollno'] = db.users.find_one({"_id": post['author_id']})['rollno']
+        post['author_name'] = db.users.find_one({"_id": post['author_id']})['name']
     return jsonify(post_list)
     
 
