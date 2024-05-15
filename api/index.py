@@ -220,6 +220,7 @@ def create_post():
             "post_date": datetime.datetime.now(),
             "forum_id": ObjectId(request.json['forum_id']),
             "author_id": user['_id'],
+            "participants": []
         }
         post_id = db.posts.insert_one(new_post).inserted_id
         return jsonify({"message": "Post created successfully", "post_id": str(post_id)}), 201
@@ -278,3 +279,11 @@ def delete_post(post_id):
     else:
         return jsonify({"message": "User not found"}), 404
     
+
+@app.route('/part_empty', methods=['GET'])
+def part_empty():
+    events = db.events.find()
+    for event in events:
+        if 'participants' not in event:
+            db.events.update_one({"_id": event['_id']}, {"$set": {"participants": []}})
+    return 'Participants attribute added successfully!'
