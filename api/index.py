@@ -218,7 +218,7 @@ def create_post():
         new_post = {
             "content": request.json['content'],
             "post_date": datetime.datetime.now(),
-            "forum_id": ObjectId(request.json['forum_id']),
+   
             "author_id": user['_id'],
             "participants": []
         }
