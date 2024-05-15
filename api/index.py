@@ -182,17 +182,27 @@ def register_event(event_id):
 @app.route('/registered_events', methods=['GET'])
 @jwt_required()
 def registered_events():
-    user_roll = get_jwt_identity()
-    user = db.users.find_one({"rollno": user_roll})
-    events = db.events.find()
-    event_list = []
-    
-    for event in events:
-        if user_roll in event['participants']:
-            event['_id'] = str(event['_id'])
-            event_list.append({"event_id": event['_id'], "name": event['name'], "date": event['date'], "organization": event['organisation']})
-                        
-    return jsonify(event_list), 200
+    try:
+        user_roll = get_jwt_identity()
+        user = db.users.find_one({"rollno": user_roll})
+        events = db.events.find()
+        event_list = []
+        
+        for event in events:
+            if 'participants' in event and user_roll in event['participants']:
+                event['_id'] = str(event['_id'])
+                event_list.append({
+                    "event_id": event['_id'],
+                    "name": event.get('name', 'No Name'),
+                    "date": event.get('date', 'No Date'),
+                    "organization": event.get('organisation', 'No Organisation')
+                })
+                            
+        return jsonify(event_list), 200
+
+    except Exception as e:
+        return jsonify({"message": "An error occurred", "error": str(e)}), 500
+
 
 # post routes
 
